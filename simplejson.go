@@ -3,7 +3,13 @@ package simplejson
 import (
 	"encoding/json"
 	"errors"
+	//"strings"
+	"reflect"
 	"log"
+	//"fmt"
+
+    util "github.com/jabbawockeez/go-utils"
+    "github.com/astaxie/beego/logs"
 )
 
 // returns the current implementation version
@@ -63,6 +69,7 @@ func (j *Json) Set(key string, val interface{}) {
 	m[key] = val
 }
 
+
 // SetPath modifies `Json`, recursively checking/creating map keys for the supplied path,
 // and then finally writing in the value
 func (j *Json) SetPath(branch []string, val interface{}) {
@@ -102,6 +109,73 @@ func (j *Json) SetPath(branch []string, val interface{}) {
 	curr[branch[len(branch)-1]] = val
 }
 
+func (j *Json) SetPath1(val interface{}, branch ...string) {
+    j.SetPath(branch, val)
+}
+
+// an Enhanced set
+func (j *Json) EnSet(args ...interface{}) {
+    if len(args) < 2 {
+        panic("EnSet accept at least two arguments: key and value!")
+    }
+
+    v := args[len(args) - 1]
+    var val interface{} 
+    typ := reflect.TypeOf(v)
+
+    for typ.Kind() == reflect.Ptr {
+        typ = typ.Elem()
+    }
+
+    if typ.Name() == "Json" {
+        v = v.(*Json).Interface()
+        typ = reflect.TypeOf(v)
+    }
+
+    if typ.Kind() == reflect.Slice {
+        value := reflect.ValueOf(v)
+        ia := make([]interface{}, value.Len())
+
+        for i := 0; i < value.Len(); i++ {
+            ia[i] = value.Index(i).Interface()
+        }
+        val = &ia
+    } else {
+        val = v
+    }
+
+    branch := make([]string, len(args) - 1)
+    for i := 0; i < len(args) - 1; i++ {
+        branch[i] = args[i].(string)
+    }
+
+    if len(branch) == 1 {
+        j.Set(branch[0], val)
+    } else {
+        j.SetPath(branch, val)
+    }
+}
+
+func (j *Json) Length() (length int) {
+    typ := reflect.TypeOf(j.Interface())
+
+    if typ.Kind() == reflect.Ptr {
+        typ = typ.Elem()
+    }
+
+    switch typ.Kind() {
+    case reflect.Slice:
+        length = len(j.MustArray())
+    case reflect.Map:
+        length = len(j.MustMap())
+    case reflect.String:
+        length = len(j.MustString())
+    default:
+        panic("Can not get length of " + typ.String())
+    }
+    return
+}
+
 // Del modifies `Json` map by deleting `key` if it is present.
 func (j *Json) Del(key string) {
 	m, err := j.Map()
@@ -111,29 +185,79 @@ func (j *Json) Del(key string) {
 	delete(m, key)
 }
 
+func (j *Json) DelIndex(index int) (err error) {
+	ap, e := j.ArrayPtr()
+	if e != nil {
+		err = e
+        return
+	}
+	*ap = append((*ap)[:index], (*ap)[index + 1:]...)
+
+    return
+}
+
+func (j *Json) Insert(index int, val interface{}) {
+	ap, err := j.ArrayPtr()
+	if err != nil {
+		return
+	}
+
+    if index > len(*ap) {
+        panic("Insert index out of range!")
+    }
+
+	*ap = append(*ap, 0)
+    copy((*ap)[index + 1:], (*ap)[index:])
+    (*ap)[index] = val
+}
+
 // Get returns a pointer to a new `Json` object
 // for `key` in its `map` representation
 //
 // useful for chaining operations (to traverse a nested JSON):
 //    js.Get("top_level").Get("dict").Get("value").Int()
 func (j *Json) Get(key string) *Json {
-	m, err := j.Map()
-	if err == nil {
-		if val, ok := m[key]; ok {
-			return &Json{val}
-		}
-	}
-	return &Json{nil}
+    m, err := j.Map()
+    if err == nil {
+        if val, ok := m[key]; ok {
+            if reflect.TypeOf(val).Kind() == reflect.Slice {
+                //util.P(reflect.TypeOf(&val))
+                //m[key] = append(m[key].([]interface{}), 9)
+                arr := val.([]interface{})
+                //util.P(&arr, reflect.TypeOf(&arr))
+                m[key] = &arr
+                //util.Pf("get --- %p\n", m[key])
+                return &Json{&arr}
+            }
+            return &Json{val}
+        }
+    }
+    return &Json{nil}
 }
 
 // GetPath searches for the item as specified by the branch
 // without the need to deep dive using Get()'s.
 //
 //   js.GetPath("top_level", "dict")
-func (j *Json) GetPath(branch ...string) *Json {
+//func (j *Json) GetPath(branch ...string) *Json {
+//	jin := j
+//	for _, p := range branch {
+//		jin = jin.Get(p)
+//	}
+//	return jin
+//}
+func (j *Json) GetPath(branch ...interface{}) *Json {
 	jin := j
+    var ok bool
 	for _, p := range branch {
-		jin = jin.Get(p)
+        switch p.(type) {
+        case string:
+            if jin, ok = jin.CheckGet(p.(string)); !ok {
+                return &Json{nil}
+            }
+        case int:
+            jin = jin.GetIndex(p.(int))
+        }
 	}
 	return jin
 }
@@ -144,11 +268,21 @@ func (j *Json) GetPath(branch ...string) *Json {
 // this is the analog to Get when accessing elements of
 // a json array instead of a json object:
 //    js.Get("top_level").Get("array").GetIndex(1).Get("key").Int()
+//func (j *Json) GetIndex(index int) *Json {
+//	a, err := j.Array()
+//	if err == nil {
+//		if len(a) > index {
+//			return &Json{a[index]}
+//		}
+//	}
+//	return &Json{nil}
+//}
+
 func (j *Json) GetIndex(index int) *Json {
-	a, err := j.Array()
+	ap, err := j.ArrayPtr()
 	if err == nil {
-		if len(a) > index {
-			return &Json{a[index]}
+		if len(*ap) > index {
+			return &Json{(*ap)[index]}
 		}
 	}
 	return &Json{nil}
@@ -181,11 +315,47 @@ func (j *Json) Map() (map[string]interface{}, error) {
 
 // Array type asserts to an `array`
 func (j *Json) Array() ([]interface{}, error) {
-	if a, ok := (j.data).([]interface{}); ok {
-		return a, nil
-	}
-	return nil, errors.New("type assertion to []interface{} failed")
+    ap, err := j.ArrayPtr()
+    return *ap, err
+
+    //if a, ok := (j.data).([]interface{}); ok {
+    //    return a, nil
+    //}
+    //return nil, errors.New("type assertion to []interface{} failed")
 }
+
+func (j *Json) ArrayPtr() (p *[]interface{}, err error) {
+    typ := reflect.TypeOf(j.data)
+
+    if typ.Kind() == reflect.Ptr {
+        var ok bool
+        if p, ok = j.data.(*[]interface{}); !ok {
+            err = errors.New("Not interface slice pointer!")
+        }
+    } else if typ.Kind() == reflect.Slice {
+        arr := j.data.([]interface{})
+        p = &arr
+        j.data = p
+    } else {
+        err = errors.New("Not slice or slice pointer!")
+    }
+
+    return 
+}
+
+//func (j *Json) ArrayPtr() (p interface{}, err error) {
+//    typ := reflect.TypeOf(j.data)
+//
+//    if typ.Kind() == reflect.Ptr {
+//        p = j.data
+//    } else if typ.Kind() == reflect.Slice {
+//        p = &(j.data)
+//    } else {
+//        err = errors.New("Not slice or slice pointer!")
+//    }
+//
+//    return 
+//}
 
 // Bool type asserts to `bool`
 func (j *Json) Bool() (bool, error) {
@@ -443,4 +613,258 @@ func (j *Json) MustUint64(args ...uint64) uint64 {
 	}
 
 	return def
+}
+
+func (j *Json) Append(val interface{}) {
+    ap, err := j.ArrayPtr()
+    //util.P(*ap, err)
+    if err != nil {
+        log.Panic(err)
+        return
+    }
+
+    typ := reflect.TypeOf(val)
+
+    for typ.Kind() == reflect.Ptr {
+        typ = typ.Elem()
+    }
+
+    if typ.Name() == "Json" {
+        val = val.(*Json).Interface()
+    }
+
+    //*(ap.(*interface{})) = append((*(ap.(*interface{}))).([]interface{}), val)
+    *ap = append(*ap, val)
+    j.data = ap
+}
+
+func (j *Json) Extend(val interface{}) {
+    typ := reflect.TypeOf(val)
+
+    var arr *Json
+
+    if typ.Name() != "*Json" {
+        arr = FromStruct(val)
+    } else {
+        arr = val.(*Json)
+    }
+
+    for _, item := range arr.Items() {
+        j.Append(item)
+    }
+}
+
+//func (j *Json) Append1(key string, val interface{}) {
+//    var err error
+//    var arr []interface{}
+//    var data interface{}
+//
+//    typ := reflect.TypeOf(val)
+//
+//    if (typ.Kind() == reflect.Ptr) {
+//        typ = typ.Elem()
+//    }
+//
+//    switch typ.Kind() {
+//    case reflect.Struct:
+//        data = util.StructToMap(val)
+//    default:
+//        data = val
+//    }
+//
+//    if key == "" {
+//        arr, err = j.Array()
+//        j.data = append(arr, data)
+//    } else {
+//        arr, err = j.Get(key).Array()
+//        j.Set(key, append(arr, data))
+//    }
+//
+//    if err != nil {
+//        log.Panic(err)
+//    }
+//
+//    return
+//}
+
+func (j *Json) Keys() (keys []string) {
+    for k, _ := range j.MustMap() {
+        keys = append(keys, k)
+    }
+
+    return 
+}
+
+func (j *Json) RenameKey(old, new string) {
+    if v, ok := j.CheckGet(old); ok {
+        j.EnSet(new, v)
+        j.Del(old)
+    }
+}
+
+func (j *Json) GetStringArray(path ...interface{}) (v []string) {
+    switch len(path) {
+    case 0:
+        v = j.MustStringArray()
+    default:
+        v = j.GetPath(path...).MustStringArray()
+    }
+
+    return 
+}
+
+func (j *Json) GetString(path ...interface{}) (v string) {
+    switch len(path) {
+    case 0:
+        v = j.MustString()
+    default:
+        v = j.GetPath(path...).MustString()
+    }
+
+    return 
+}
+
+func (j *Json) GetInt(path ...interface{}) (v int) {
+    switch len(path) {
+    case 0:
+        v = j.MustInt()
+    default:
+        v = j.GetPath(path...).MustInt()
+    }
+
+    return 
+}
+
+func (j *Json) GetFloat64(path ...interface{}) (v float64) {
+    switch len(path) {
+    case 0:
+        v = j.MustFloat64()
+    default:
+        v = j.GetPath(path...).MustFloat64()
+    }
+
+    return 
+}
+
+func (j *Json) GetMap(path ...interface{}) (v map[string]interface{}) {
+    switch len(path) {
+    case 0:
+        v = j.MustMap()
+    default:
+        v = j.GetPath(path...).MustMap()
+    }
+
+    return 
+}
+
+func (j *Json) GetBool(path ...interface{}) (v bool) {
+    switch len(path) {
+    case 0:
+        v = j.MustBool()
+    default:
+        v = j.GetPath(path...).MustBool()
+    }
+
+    return 
+}
+
+func (j *Json) GetArray(path ...interface{}) (v []interface{}) {
+    switch len(path) {
+    case 0:
+        v = j.MustArray()
+    default:
+        v = j.GetPath(path...).MustArray()
+    }
+
+    return 
+}
+
+func (j *Json) Kind() reflect.Kind {
+    return reflect.TypeOf(j.Interface()).Kind()
+}
+
+// ToStruct convert json object to struct
+func (j *Json) ToStruct(v interface{}) error {
+    byt, e := j.Encode()
+    if e != nil {
+        panic(e)
+    }
+
+    return json.Unmarshal(byt, v)
+}
+
+func (j *Json) ToString() string {
+    byt, e := j.Encode()
+    if e != nil {
+        panic(e)
+    }
+
+    return string(byt)
+}
+
+func (j *Json) ToStringPretty() string {
+    s, _ := j.EncodePretty()
+
+    return string(s)
+}
+
+func (j *Json) P() {
+    //fmt.Println(j.ToStringPretty())
+    logs.Info(j.ToStringPretty())
+}
+
+func FromStruct(v interface{}) *Json {
+    byt, e := json.Marshal(v)
+    if e != nil {
+        panic(e)
+    }
+
+    j, e := NewJson(byt)
+    if e != nil {
+        panic(e)
+    }
+
+    return j
+}
+
+// convert string or byte array to Json object
+func FromString(i interface{}) *Json {
+    var s []byte
+
+    switch i.(type) {
+        case string:
+            s = []byte(i.(string))
+        case []byte:
+            s = i.([]byte)
+    }
+
+    j, e := NewJson(s)
+    if e != nil {
+        panic(e)
+    }
+
+    return j
+}
+
+func StructToString(v interface{}) string {
+    return FromStruct(v).ToString()
+}
+
+func StringToStruct(s interface{}, v interface{}) error {
+    return FromString(util.Str(s)).ToStruct(v)
+}
+
+func (j *Json) Items() (result []*Json) {
+    result = make([]*Json, j.Length())
+
+    for i := 0; i < len(result); i++ {
+        result[i] = j.GetIndex(i)
+    }
+
+    return
+}
+
+func (j *Json) Clone() (result *Json) {
+    result = FromString(j.ToString())
+    return
 }
