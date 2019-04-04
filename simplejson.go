@@ -735,6 +735,17 @@ func (j *Json) GetInt(path ...interface{}) (v int) {
     return 
 }
 
+func (j *Json) GetInt64(path ...interface{}) (v int64) {
+    switch len(path) {
+    case 0:
+        v = j.MustInt64()
+    default:
+        v = j.GetPath(path...).MustInt64()
+    }
+
+    return 
+}
+
 func (j *Json) GetFloat64(path ...interface{}) (v float64) {
     switch len(path) {
     case 0:
