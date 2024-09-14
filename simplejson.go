@@ -3,13 +3,13 @@ package simplejson
 import (
 	"encoding/json"
 	"errors"
-	//"strings"
-	"reflect"
-	"log"
-	//"fmt"
 
-    util "github.com/jabbawockeez/go-utils"
-    "github.com/astaxie/beego/logs"
+	//"strings"
+	"log"
+	"reflect"
+
+	"github.com/astaxie/beego/logs"
+	util "github.com/jabbawockeez/go-utils"
 )
 
 // returns the current implementation version
@@ -227,6 +227,7 @@ func (j *Json) Get(key string) *Json {
                 //util.P(&arr, reflect.TypeOf(&arr))
                 m[key] = &arr
                 //util.Pf("get --- %p\n", m[key])
+
                 return &Json{&arr}
             }
             return &Json{val}
@@ -259,6 +260,7 @@ func (j *Json) GetPath(branch ...interface{}) *Json {
             jin = jin.GetIndex(p.(int))
         }
 	}
+
 	return jin
 }
 
@@ -298,9 +300,20 @@ func (j *Json) GetIndex(index int) *Json {
 func (j *Json) CheckGet(key string) (*Json, bool) {
 	m, err := j.Map()
 	if err == nil {
+		// if val, ok := m[key]; ok {
+		// 	// m[key] = &val
+		// 	log.Printf("%p--", val)
+		// 	return &Json{val}, true
+		// }
+
 		if val, ok := m[key]; ok {
-			return &Json{val}, true
-		}
+            if reflect.TypeOf(val).Kind() == reflect.Slice {
+                arr := val.([]interface{})
+                m[key] = &arr
+                return &Json{&arr}, true
+            }
+            return &Json{val}, true
+        }
 	}
 	return nil, false
 }
