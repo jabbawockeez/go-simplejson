@@ -7,7 +7,6 @@ import (
 
 	"log"
 	"reflect"
-
 	// util "github.com/jabbawockeez/go-utils"
 )
 
@@ -867,7 +866,7 @@ func StringToStruct(s interface{}, v interface{}) error {
     default:
         s = fmt.Sprintf("%v", s)
     }
-    return FromString(str.ToStruct(v)
+    return FromString(str).ToStruct(v)
 }
 
 func (j *Json) Items() (result []*Json) {
