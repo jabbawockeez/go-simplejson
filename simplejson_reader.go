@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"os"
 	"reflect"
 	"strconv"
 )
@@ -14,6 +15,17 @@ func (j *Json) UnmarshalJSON(p []byte) error {
 	dec := json.NewDecoder(bytes.NewBuffer(p))
 	dec.UseNumber()
 	return dec.Decode(&j.data)
+}
+
+func NewFromFile(filename string) (*Json, error) {
+	f, err := os.Open(filename)
+	defer f.Close()
+	
+	if err != nil {
+		return nil, err
+	}
+
+	return NewFromReader(f)
 }
 
 // NewFromReader returns a *Json by decoding from an io.Reader
