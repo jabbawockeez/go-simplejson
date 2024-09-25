@@ -2,12 +2,30 @@
 
 a Go package to interact with arbitrary JSON
 
-[![Build Status](https://secure.travis-ci.org/bitly/go-simplejson.png)](http://travis-ci.org/bitly/go-simplejson)
-
 ### Importing
 
-    import github.com/bitly/go-simplejson
+    import github.com/jabbawockeez/go-simplejson
 
-### Documentation
+### Usage
 
-Visit the docs on [gopkgdoc](http://godoc.org/github.com/bitly/go-simplejson)
+#### FromString
+```
+	obj := json.FromString(`{"a":1}`)
+
+	obj.GetPath("a").Append(3)
+	obj.Get("a").Append(2)
+	obj.GetPath("a").Insert(2, 5)
+	// obj.EnSet("a", "b", 6)
+	obj.EnSet("b", "bb")
+	obj.EnSet("c", "d", "dd")
+	// obj.EnSet( 96)
+	obj.P()
+	s := struct{
+		D string
+	}{}
+	obj.GetPath("c").ToStruct(&s)
+	fmt.Printf("%#v", s)
+	d3 := obj.Clone()
+	fmt.Printf("%#v", obj.Items())
+	fmt.Printf("%p %p", d2, d3)
+```

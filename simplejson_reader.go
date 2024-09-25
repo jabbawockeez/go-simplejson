@@ -17,7 +17,7 @@ func (j *Json) UnmarshalJSON(p []byte) error {
 	return dec.Decode(&j.data)
 }
 
-func NewFromFile(filename string) (*Json, error) {
+func FromFile(filename string) (*Json, error) {
 	f, err := os.Open(filename)
 	defer f.Close()
 	
