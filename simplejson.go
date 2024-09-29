@@ -693,7 +693,7 @@ func (j *Json) Keys() (keys []string) {
 
 func (j *Json) Items() (result map[interface{}]*Json) {
 	result = map[interface{}]*Json{}
-	
+
     typ := reflect.TypeOf(j.Interface())
 
     if typ.Kind() == reflect.Ptr {
@@ -886,9 +886,9 @@ func StringToStruct(s interface{}, v interface{}) error {
 
 	switch s.(type) {
     case []byte:
-        s = string(s.([]byte))
+        str = string(s.([]byte))
     default:
-        s = fmt.Sprintf("%v", s)
+        str = fmt.Sprintf("%v", s)
     }
     return FromString(str).ToStruct(v)
 }
