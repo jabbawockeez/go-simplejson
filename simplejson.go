@@ -691,6 +691,28 @@ func (j *Json) Keys() (keys []string) {
     return 
 }
 
+func (j *Json) Items() (result map[interface{}]*Json) {
+    typ := reflect.TypeOf(j.Interface())
+
+    if typ.Kind() == reflect.Ptr {
+        typ = typ.Elem()
+    }
+
+    switch typ.Kind() {
+    case reflect.Slice:
+		arr, _ := j.Array()
+        for idx, item := range arr {
+			result[idx] = &Json{item}
+		}
+    case reflect.Map:
+        for key, item := range j.MustMap() {
+			result[key] = &Json{item}
+		}
+    }
+
+    return
+}
+
 func (j *Json) RenameKey(old, new string) {
     if v, ok := j.CheckGet(old); ok {
         j.EnSet(new, v)
@@ -867,16 +889,6 @@ func StringToStruct(s interface{}, v interface{}) error {
         s = fmt.Sprintf("%v", s)
     }
     return FromString(str).ToStruct(v)
-}
-
-func (j *Json) Items() (result []*Json) {
-    result = make([]*Json, j.Length())
-
-    for i := 0; i < len(result); i++ {
-        result[i] = j.GetIndex(i)
-    }
-
-    return
 }
 
 func (j *Json) Clone() (result *Json) {
