@@ -12,10 +12,10 @@ a Go package to interact with arbitrary JSON
 ```
     obj := json.New()
 
-	obj = json.FromString(`{"a": 1}`)
+    obj = json.FromString(`{"a": 1}`)
 
-	// FromString also accept byte array
-	obj = json.FromString([]byte{'{', '}'})
+    // FromString also accept byte array
+    obj = json.FromString([]byte{'{', '}'})
 
     obj, _ = json.FromFile("/path/to/file")
 ```
@@ -37,8 +37,8 @@ a Go package to interact with arbitrary JSON
 
 #### EnSet
 ```
-	obj.EnSet("b", "c", 2)
-	obj.EnSet("d", []int{3,4,5})
+    obj.EnSet("b", "c", 2)
+    obj.EnSet("d", []int{3,4,5})
     obj.EnSet("e", json.FromString(`{"f":6}`))
 
     /*
@@ -64,7 +64,7 @@ a Go package to interact with arbitrary JSON
 ```
     obj.Get("a").P()
     obj.GetPath("b", "c").P()
-	obj.GetPath("d", 1).P()
+    obj.GetPath("d", 1).P()
     obj.Get("d").GetIndex(2).P()
 
     /*
@@ -79,7 +79,7 @@ a Go package to interact with arbitrary JSON
 #### Length
 ```
     fmt.Println(obj.Length())
-	fmt.Println(obj.Get("d").Length())
+    fmt.Println(obj.Get("d").Length())
 
     /*
     output:
@@ -92,8 +92,8 @@ a Go package to interact with arbitrary JSON
 #### Insert、Append
 ```
     obj.Get("d").Insert(1, "hello")
-	obj.Get("d").Append("world")
-	obj.Get("d").Extend([]string{"simple", "json"})
+    obj.Get("d").Append("world")
+    obj.Get("d").Extend([]string{"simple", "json"})
     obj.Get("d").Extend(json.FromString(`["so", "easy"]`))
 
     /*
@@ -118,7 +118,7 @@ a Go package to interact with arbitrary JSON
 #### Del、DelIndex
 ```
     obj.Del("a")
-	obj.Get("b").Del("c")
+    obj.Get("b").Del("c")
     obj.Get("d").DelIndex(2)
 ```
 output:
@@ -143,9 +143,9 @@ output:
 
     // Items can be used to iterate over dict and array
     for key, value := range obj.Items() {
-		fmt.Println(key, value.ToString())
-		value.P()
-	}
+        fmt.Println(key, value.ToString())
+        value.P()
+    }
     /*
     output:
     a 1
@@ -154,9 +154,9 @@ output:
     */
 
     for key, value := range obj.Get("d").Items() {
-		fmt.Println(key, value.ToString())
-		value.P()
-	}
+        fmt.Println(key, value.ToString())
+        value.P()
+    }
     /*
     output:
     4 "world"
@@ -182,9 +182,9 @@ output:
             },
             "g": true,
             "h": [
-				{"i": 111},
-				{"i": 222}
-			]
+                {"i": 111},
+                {"i": 222}
+            ]
         }
     */
     obj.GetInt("a")
@@ -213,15 +213,15 @@ output:
         "b": "234"
     }`
 
-	type T struct {
-		A 	int
-		B 	string
-	}
+    type T struct {
+        A     int
+        B     string
+    }
 
-	var t T
+    var t T
 
-	obj := json.FromString(s)
-	obj.ToStruct(&t)
+    obj := json.FromString(s)
+    obj.ToStruct(&t)
 
     // or just use StringToStruct for short
     // json.StringToStruct(s, &t)
@@ -231,13 +231,13 @@ output:
 #### struct -> string
 ```
    type T struct {
-		A 	int
-		B 	string
-	}
+        A     int
+        B     string
+    }
 
-	var t = T{1, "222"}
+    var t = T{1, "222"}
 
-	obj := json.FromStruct(t)
+    obj := json.FromStruct(t)
     obj.ToString()
 
     // or just use StructToString for short
