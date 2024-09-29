@@ -120,16 +120,17 @@ a Go package to interact with arbitrary JSON
     obj.Del("a")
     obj.Get("b").Del("c")
     obj.Get("d").DelIndex(2)
-```
-output:
-```
-{
-  "b": {},
-  "d": [
-    3,
-    4
-  ]
-}
+
+    /*
+    output:
+    {
+        "b": {},
+        "d": [
+            3,
+            4
+        ]
+    }
+    */
 ```
 
 
