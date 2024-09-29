@@ -692,6 +692,8 @@ func (j *Json) Keys() (keys []string) {
 }
 
 func (j *Json) Items() (result map[interface{}]*Json) {
+	result = map[interface{}]*Json{}
+	
     typ := reflect.TypeOf(j.Interface())
 
     if typ.Kind() == reflect.Ptr {
