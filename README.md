@@ -240,7 +240,7 @@ a Go package to interact with arbitrary JSON
     obj.ToString()
 
     // or just use StructToString for short
-    json.StructToString(t)
+    s := json.StructToString(t)
 ```
 
 
