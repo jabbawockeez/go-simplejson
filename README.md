@@ -145,7 +145,6 @@ a Go package to interact with arbitrary JSON
     // Items can be used to iterate over dict and array
     for key, value := range obj.Items() {
         fmt.Println(key, value.ToString())
-        value.P()
     }
     /*
     output:
@@ -156,7 +155,6 @@ a Go package to interact with arbitrary JSON
 
     for key, value := range obj.Get("d").Items() {
         fmt.Println(key, value.ToString())
-        value.P()
     }
     /*
     output:
