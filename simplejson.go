@@ -7,6 +7,8 @@ import (
 
 	"log"
 	"reflect"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	// util "github.com/jabbawockeez/go-utils"
 )
 
@@ -308,7 +310,19 @@ func (j *Json) CheckGet(key string) (*Json, bool) {
 
 // Map type asserts to `map`
 func (j *Json) Map() (map[string]interface{}, error) {
-	if m, ok := (j.data).(map[string]interface{}); ok {
+    var ok bool
+    var m map[string]interface{}
+    // reflect.TypeOf(j.data)
+    switch j.data.(type) {
+    case primitive.M:
+        m, ok = map[string]interface{}((j.data).(primitive.M))
+    case map[string]interface{}:
+        m, ok = (j.data).(map[string]interface{})
+    }
+	// if m, ok := (j.data).(map[string]interface{}); ok {
+	// 	return m, nil
+	// }
+	if ok {
 		return m, nil
 	}
 	return nil, errors.New("type assertion to map[string]interface{} failed")
