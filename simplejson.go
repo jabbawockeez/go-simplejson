@@ -218,14 +218,28 @@ func (j *Json) Insert(index int, val interface{}) {
 //	js.Get("top_level").Get("dict").Get("value").Int()
 func (j *Json) Get(key string) *Json {
     m, err := j.Map()
+    
     if err == nil {
         if val, ok := m[key]; ok {
-            if reflect.TypeOf(val).Kind() == reflect.Slice {
-                arr := val.([]interface{})
+            switch val.(type) {
+            case primitive.A: 
+                arr := []interface{}(val.(primitive.A))
                 m[key] = &arr
                 return &Json{&arr}
+            case primitive.M:
+                val = map[string]interface{}(val.(primitive.M))
+                m[key] = val
+                return &Json{val}
+            default: 
+                if reflect.TypeOf(val).Kind() == reflect.Slice {
+                    arr := val.([]interface{})
+                    m[key] = &arr
+                    return &Json{&arr}
+                } else {
+                    return &Json{val}
+                }
             }
-            return &Json{val}
+           
         }
     }
     return &Json{nil}
@@ -298,9 +312,16 @@ func (j *Json) CheckGet(key string) (*Json, bool) {
 	if err == nil {
 		if val, ok := m[key]; ok {
             if reflect.TypeOf(val).Kind() == reflect.Slice {
-                arr := val.([]interface{})
-                m[key] = &arr
-                return &Json{&arr}, true
+                switch val.(type) {
+                case primitive.A:
+                    arr := []interface{}(val.(primitive.A))
+                    m[key] = &arr
+                    return &Json{&arr}, true
+                default:   
+                    arr := val.([]interface{})
+                    m[key] = &arr
+                    return &Json{&arr}, true
+                }
             }
             return &Json{val}, true
         }
@@ -312,16 +333,21 @@ func (j *Json) CheckGet(key string) (*Json, bool) {
 func (j *Json) Map() (map[string]interface{}, error) {
     var ok bool
     var m map[string]interface{}
-    // reflect.TypeOf(j.data)
+
     switch j.data.(type) {
     case primitive.M:
-        m, ok = map[string]interface{}((j.data).(primitive.M))
-    case map[string]interface{}:
+        a, _ := (j.data).(primitive.M)
+        
+        m = map[string]interface{}(a)
+        j.data = m
+        ok = true
+    default:
         m, ok = (j.data).(map[string]interface{})
     }
 	// if m, ok := (j.data).(map[string]interface{}); ok {
 	// 	return m, nil
 	// }
+    
 	if ok {
 		return m, nil
 	}
