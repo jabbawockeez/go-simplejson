@@ -60,6 +60,25 @@ a Go package to interact with arbitrary JSON
     */
 ```
 
+#### SetIndex
+```
+    obj.EnSet("d", []int{3,4,5})
+    obj.Get("d").SetIndex(0, 1)
+
+    /*
+    output:
+    {
+        ...
+        "d": [
+            1,
+            4,
+            5
+        ],
+        ...
+    }
+    */
+```
+
 #### Get、GetPath、GetIndex
 ```
     obj.Get("a").P()

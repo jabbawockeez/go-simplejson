@@ -299,6 +299,15 @@ func (j *Json) GetIndex(index int) *Json {
 	return &Json{nil}
 }
 
+func (j *Json) SetIndex(index int, val interface{}) {
+	ap, err := j.ArrayPtr()
+	if err == nil {
+		if len(*ap) > index {
+			(*ap)[index] = val
+		}
+	}
+}
+
 // CheckGet returns a pointer to a new `Json` object and
 // a `bool` identifying success or failure
 //
