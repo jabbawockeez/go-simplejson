@@ -125,12 +125,12 @@ func (j *Json) EnSet(args ...interface{}) {
     for typ.Kind() == reflect.Ptr {
         typ = typ.Elem()
     }
-
+    
     if typ.Name() == "Json" {
         v = v.(*Json).Interface()
         typ = reflect.TypeOf(v)
     }
-
+    
     if typ.Kind() == reflect.Slice {
         value := reflect.ValueOf(v)
         ia := make([]interface{}, value.Len())
@@ -860,7 +860,15 @@ func (j *Json) GetArray(path ...interface{}) (v []interface{}) {
 }
 
 func (j *Json) Kind() reflect.Kind {
-    return reflect.TypeOf(j.Interface()).Kind()
+    return reflect.TypeOf(j.data).Kind()
+}
+
+func (j *Json) IsNil() bool {
+	return j.data == nil
+}
+
+func (j *Json) Type() reflect.Type {
+	return reflect.TypeOf(j.data)
 }
 
 // ToStruct convert json object to struct
