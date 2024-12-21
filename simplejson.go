@@ -230,6 +230,8 @@ func (j *Json) Get(key string) *Json {
                 val = map[string]interface{}(val.(primitive.M))
                 m[key] = val
                 return &Json{val}
+            case nil:
+                return &Json{nil}
             default: 
                 if reflect.TypeOf(val).Kind() == reflect.Slice {
                     arr := val.([]interface{})
