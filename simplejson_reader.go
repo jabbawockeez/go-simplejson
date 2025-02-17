@@ -28,6 +28,15 @@ func FromFile(filename string) (*Json, error) {
 	return NewFromReader(f)
 }
 
+func (j *Json) ToFile(filename string) (error) {
+    data, err := j.MarshalJSON()
+    if err != nil {
+        return err
+    }
+
+	return os.WriteFile(filename, data, 0644)
+}
+
 // NewFromReader returns a *Json by decoding from an io.Reader
 func NewFromReader(r io.Reader) (*Json, error) {
 	j := new(Json)
